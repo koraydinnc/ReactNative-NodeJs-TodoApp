@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.4",
     "pg": "^8.13.1",
+    "pg-promise": "^11.10.2",
     "sequelize": "^6.37.5"
   },
   "devDependencies": {
