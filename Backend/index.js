@@ -1,35 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const sequelize = require('./config/database');
-const todoRoutes = require('./routes/todoRoutes');
-const Todo = require('./models/Todo');
-
-dotenv.config();
-
+require("dotenv").config();
+const express = require("express");
 const app = express();
+const todoRoutes = require("./routes/todoRoutes");
+const cors = require("cors");
+const bodyParser = require('body-parser');
 
-app.use(express.json());
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());  
+app.use("/api", todoRoutes); 
 
-app.use('/api', todoRoutes);
+const PORT = process.env.PORT || 5000; 
 
-const connectToDatabase = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('PostgreSQL Connected');
-
-        Todo.initModel(sequelize);
-        await sequelize.sync({ alter: true });
-        console.log('Database synchronized');
-    } catch (error) {
-        console.error('Database connection error:', error.message);
-        process.exit(1);
-    }
-};
-
-connectToDatabase();
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT,() => {
+  console.log(`Server started on port ${PORT}`);
+});

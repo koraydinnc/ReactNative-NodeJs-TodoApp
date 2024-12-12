@@ -1,39 +1,58 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { Appbar, Button, Card, Title, Paragraph, FAB, IconButton } from 'react-native-paper';
+import React from 'react';
+import { StyleSheet, ScrollView } from 'react-native';
+import { Paragraph, Card, IconButton, FAB, ActivityIndicator, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useGetTodoQuery } from '../app/api/TodoApi';
 
 const HomeScreen = ({ navigation }) => {
-  const tasks = [
-    { id: 1, type: 'meeting', title: 'Toplantıya Katıl', description: 'Saat 14:00\'de müşteri toplantısı.', color: '#3e4a61', icon: 'briefcase' },
-    { id: 2, type: 'shopping', title: 'Alışveriş Yap', description: 'Meyve ve sebze alınacak.', color: '#ffa726', icon: 'cart' },
-    { id: 3, type: 'exercise', title: 'Spor Yap', description: 'Bugün 30 dakika koşu yap.', color: '#66bb6a', icon: 'run' },
-  ];
+  const { data: tasks, isLoading, error, refetch } = useGetTodoQuery();
+
+  console.log("Todolar getirildi:", JSON.stringify(tasks));
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ActivityIndicator animating={true} size="large" style={styles.loading} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    console.log('Error:', error);
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Paragraph>Bir hata oluştu: {JSON.stringify(error, null, 2)}</Paragraph>
+        <Button mode="contained" onPress={refetch}>Tekrar Dene</Button>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        {tasks.map((task) => (
+        {tasks && tasks.todos ? (
           <Card
-            key={task.id}
-            style={[styles.card, { borderLeftColor: task.color }]}
-            onPress={() => navigation.navigate('TaskDetails', { task })}
+            key={tasks.todos.id}
+            style={[styles.card, { borderLeftColor: tasks.todos.priority === "high" ? '#FF0000' : '#000' }]}
+            onPress={() => navigation.navigate('TaskDetails', { task: tasks.todos })}
           >
             <Card.Title
-              title={task.title}
-              subtitle={task.description}
+              title={tasks.todos.title}
+              subtitle={tasks.todos.description}
               left={(props) => (
                 <IconButton
                   {...props}
-                  icon={task.icon}
-                  color={task.color}
+                  icon="note"
+                  color="#000"
                   size={32}
                   style={styles.icon}
                 />
               )}
             />
           </Card>
-        ))}
+        ) : (
+          <Paragraph>Görev bulunamadı.</Paragraph>
+        )}
       </ScrollView>
 
       <FAB
@@ -72,8 +91,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#CCC',
+    backgroundColor: '#6200EE',
     margin: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loading: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   }
