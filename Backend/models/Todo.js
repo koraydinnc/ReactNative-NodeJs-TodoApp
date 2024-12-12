@@ -1,4 +1,4 @@
-import { DataTypes, Model } from "sequelize";
+const { Model, DataTypes } = require('sequelize');
 
 class Todo extends Model {
     static initModel(sequelize) {
@@ -7,38 +7,43 @@ class Todo extends Model {
                 id: {
                     type: DataTypes.INTEGER,
                     primaryKey: true,
-                    autoIncrement: true
+                    autoIncrement: true,
                 },
                 title: {
-                    tpye: DataTypes.STRING,
-                    allowNull: false
+                    type: DataTypes.STRING,
+                    allowNull: false,
                 },
                 description: {
                     type: DataTypes.STRING,
-                    allowNull:true
+                    allowNull: true,
                 },
                 category: {
                     type: DataTypes.STRING,
-                    allowNull:true
+                    allowNull: true,
+                    defaultValue: 'genel',
                 },
                 priority: {
-                    type: DataTypes.ENUM("low", "medium", "high"),
+                    type: DataTypes.ENUM('low', 'medium', 'high'),
                     allowNull: true,
-                    defaultValue: "medium"
+                    defaultValue: 'medium',
                 },
                 completed: {
-                    type:DataTypes.BOOLEAN,
-                    defaultValue: false
-                }
+                    type: DataTypes.BOOLEAN,
+                    defaultValue: false,
+                },
+                userId: {
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
             },
             {
                 sequelize,
                 tableName: 'todos',
-                modelName:'Todo',
-                timestamps: true
+                modelName: 'Todo',
+                timestamps: true, // createdAt ve updatedAt otomatik olarak eklenir
             }
-        )
+        );
     }
 }
 
-export default Todo
+module.exports = Todo;
