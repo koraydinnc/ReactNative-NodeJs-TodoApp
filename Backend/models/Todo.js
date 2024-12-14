@@ -31,6 +31,10 @@ Todo.init({
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  completed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue:false
+  }
 }, {
   sequelize,
   modelName: 'Todo',
