@@ -1,16 +1,16 @@
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Button, Paragraph, Title } from "react-native-paper";
 
 const TaskDetails = ({ route, navigation }) => {
-    const { task } = route.params || {}; // Prevent crash if route.params is undefined
+    const { task } = route.params; 
   
-    console.log('Task:', task); // Debugging
+    console.log('Task:', task.title); 
     if (!task) {
       return <Paragraph>Görev bilgisi bulunamadı!</Paragraph>;
     }
   
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <View style={styles.detailsContainer}>
           <Title style={styles.taskTitle}>{task.title}</Title>
           <Paragraph style={styles.taskDescription}>{task.description}</Paragraph>
@@ -29,7 +29,7 @@ const TaskDetails = ({ route, navigation }) => {
             Görevi Düzenle
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   };
   

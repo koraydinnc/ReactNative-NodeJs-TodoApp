@@ -46,8 +46,8 @@ const TodoList = ({ tasks, navigation, refetch }) => {
             <Card
               key={task.id}
               style={styles.card}
-              onPress={() => navigation.navigate('TodoDetail', { task })}
-            >
+              onPress={() => navigation.navigate('Todo', { screen: 'TodoDetail', params: { task } })}
+              >
               <View style={styles.cardContent}>
                 <IconButton icon="note-text-outline" color="#6200EE" size={36} />
                 <View style={styles.textContainer}>
@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFF',
+    height:'100vh',
   },
   content: {
     padding: 16,

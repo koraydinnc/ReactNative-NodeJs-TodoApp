@@ -15,13 +15,15 @@ const TodoStackNavigator = () => {
       <Stack.Screen 
         name="TodoList" 
         component={TodoScreen} 
-        options={{ headerShown: false }} 
+        options={{ title: 'Görev Listesi' }}
       />
-      <Stack.Screen 
-        name="TodoDetail" 
-        component={TaskDetails} 
-        options={{ title: 'Task Details' }}
+      <Stack.Screen
+        name='TodoDetail'
+        component={TaskDetails}
+        options={{title:'Görev Detayları'}}
+        
       />
+  
     </Stack.Navigator>
   );
 };
@@ -47,6 +49,7 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      
       <Tab.Screen name="Todo" component={TodoStackNavigator} />
     </Tab.Navigator>
   );
