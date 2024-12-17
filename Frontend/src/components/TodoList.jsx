@@ -2,21 +2,20 @@ import React, { useState } from 'react';
 import { StyleSheet, ScrollView, View, Alert } from 'react-native';
 import { Card, IconButton, Paragraph, Button, Text, Snackbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDeleteTodoMutation } from '../app/api/TodoApi';
+import { useCompletedTodoMutation, useDeleteTodoMutation } from '../app/api/TodoApi';
 
 const TodoList = ({ tasks, navigation, refetch }) => {
   const [deleteTodo] = useDeleteTodoMutation();
-  const [visible, setVisible] = useState(false);
+  const [completedTodo] = useCompletedTodoMutation();
   const [loadingId, setLoadingId] = useState(null);
-
-  const onDismissSnackBar = () => setVisible(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
 
   const handleDeleteTodo = async (id) => {
     setLoadingId(id);
     try {
       await deleteTodo(id).unwrap();
       refetch();
-      setVisible(true);
+      setSnackbar({ visible: true, message: 'Görev başarıyla silindi!' });
     } catch (error) {
       console.error('Görev silme hatası:', error);
       Alert.alert('Hata', 'Görev silinirken bir sorun oluştu.');
@@ -25,12 +24,19 @@ const TodoList = ({ tasks, navigation, refetch }) => {
     }
   };
 
-
-  const handleCompleted = () => {
-    console.log('completed')
-  }
+  const handleCompleted = async (id) => {
+    try {
+      await completedTodo(id).unwrap();
+      refetch();
+      setSnackbar({ visible: true, message: 'Görev başarıyla tamamlandı!' });
+    } catch (error) {
+      console.error('Tamamlama hatası:', error);
+      Alert.alert('Hata', 'Görev tamamlanırken bir sorun oluştu.');
+    }
+  };
 
   const getPriorityColor = (priority) => (priority === 'high' ? '#FF3B30' : '#4CAF50');
+  const getTodoCompleted = (completed) => (completed === true ? 'line-through' : null)
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -40,12 +46,12 @@ const TodoList = ({ tasks, navigation, refetch }) => {
             <Card
               key={task.id}
               style={styles.card}
-              onPress={() => navigation.navigate('TaskDetails', { task })}
+              onPress={() => navigation.navigate('TodoDetail', { task })}
             >
               <View style={styles.cardContent}>
                 <IconButton icon="note-text-outline" color="#6200EE" size={36} />
                 <View style={styles.textContainer}>
-                  <Text style={styles.title}>{task.title}</Text>
+                  <Text style={{textDecorationLine: task.completed ? 'line-through':'none'}} >{task.title}</Text>
                   <Text style={styles.subtitle}>{task.description}</Text>
                   <Text style={[styles.priorityText, { color: getPriorityColor(task.priority) }]}>
                     {task.priority === 'high' ? 'Yüksek Öncelik' : 'Normal Öncelik'}
@@ -53,10 +59,12 @@ const TodoList = ({ tasks, navigation, refetch }) => {
                 </View>
               </View>
               <Card.Actions style={styles.actions}>
-                <Button 
-                onPress={() => handleCompleted(task.id)}
-                mode="contained" color="#4CAF50">
-                  Onayla
+                <Button
+                  onPress={() => handleCompleted(task.id)}
+                  mode="contained-tonal"
+                  color="#4CAF50"
+                >
+                  {task.completed ? 'Vazgeç' : 'Onayla'}
                 </Button>
                 <Button
                   mode="outlined"
@@ -76,13 +84,14 @@ const TodoList = ({ tasks, navigation, refetch }) => {
           </Paragraph>
         )}
       </ScrollView>
+
       <Snackbar
         style={{ backgroundColor: '#4CAF50' }}
-        visible={visible}
-        onDismiss={onDismissSnackBar}
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
         duration={3000}
       >
-        Görev başarıyla silindi!
+        {snackbar.message}
       </Snackbar>
     </SafeAreaView>
   );
@@ -91,7 +100,7 @@ const TodoList = ({ tasks, navigation, refetch }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFF',
   },
   content: {
     padding: 16,

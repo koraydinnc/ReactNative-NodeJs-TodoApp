@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const apiBaseUrl = process.env.APP_API_BASE_URL || "http://192.168.1.11:5000/api";
+const apiBaseUrl = process.env.EXPO_PUBLIC_BASE_URL ||  'http://192.168.1.9:5000/api' ;
 
 console.log("API Base URL:", apiBaseUrl);
 
