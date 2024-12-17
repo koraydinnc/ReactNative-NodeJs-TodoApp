@@ -1,17 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-
 const apiBaseUrl = process.env.APP_API_BASE_URL || "http://192.168.1.11:5000/api";
 
-console.log("API Base URL:", apiBaseUrl);  
-
-
+console.log("API Base URL:", apiBaseUrl);
 
 export const todoApi = createApi({
   reducerPath: 'todoApi',
-  baseQuery: fetchBaseQuery({baseUrl:apiBaseUrl}), 
+  baseQuery: fetchBaseQuery({ baseUrl: apiBaseUrl }),
   endpoints: (builder) => ({
-    addTask: builder.mutation({
+    addTodo: builder.mutation({
       query: (newTask) => ({
         url: '/add-todo',
         method: 'POST',
@@ -25,13 +22,20 @@ export const todoApi = createApi({
       }),
     }),
     deleteTodo: builder.mutation({
-       query: (todoId) => ({
-        url:'/delete-todo',
-        method:'DELETE',
-        params: {todoId}
-       })
-     })
+      query: (todoId) => ({
+        url: '/delete-todo',
+        method: 'DELETE',
+        params: { todoId },
+      }),
+    }),
+    completedTodo: builder.mutation({
+      query: (todoId) => ({
+        url:'/completed-todo',
+        method:'POST',
+        params:{todoId}
+      })
+    })
   }),
 });
 
-export const { useAddTaskMutation, useGetTodoQuery, useDeleteTodoMutation } = todoApi;
+export const { useAddTodoMutation, useGetTodoQuery, useDeleteTodoMutation, useCompletedTodoMutation } = todoApi;
