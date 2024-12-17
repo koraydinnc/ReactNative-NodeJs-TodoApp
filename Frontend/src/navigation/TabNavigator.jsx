@@ -31,7 +31,6 @@ const TabNavigator = () => {
   >
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Todo" component={TodoScreen} />
-    <Tab.Screen name="TaskDetails" component={TaskDetails}/>
   </Tab.Navigator>
   
   );

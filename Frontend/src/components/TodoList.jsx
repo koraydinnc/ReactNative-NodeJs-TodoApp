@@ -1,9 +1,37 @@
-import React from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
-import { Card, IconButton, Paragraph, Button, Text } from 'react-native-paper';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, View, Alert } from 'react-native';
+import { Card, IconButton, Paragraph, Button, Text, Snackbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDeleteTodoMutation } from '../app/api/TodoApi';
 
-const TodoList = ({ tasks, navigation }) => {
+const TodoList = ({ tasks, navigation, refetch }) => {
+  const [deleteTodo] = useDeleteTodoMutation();
+  const [visible, setVisible] = useState(false);
+  const [loadingId, setLoadingId] = useState(null);
+
+  const onDismissSnackBar = () => setVisible(false);
+
+  const handleDeleteTodo = async (id) => {
+    setLoadingId(id);
+    try {
+      await deleteTodo(id).unwrap();
+      refetch();
+      setVisible(true);
+    } catch (error) {
+      console.error('Görev silme hatası:', error);
+      Alert.alert('Hata', 'Görev silinirken bir sorun oluştu.');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+
+  const handleCompleted = () => {
+    console.log('completed')
+  }
+
+  const getPriorityColor = (priority) => (priority === 'high' ? '#FF3B30' : '#4CAF50');
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -15,43 +43,26 @@ const TodoList = ({ tasks, navigation }) => {
               onPress={() => navigation.navigate('TaskDetails', { task })}
             >
               <View style={styles.cardContent}>
-                <View style={styles.iconContainer}>
-                  <IconButton
-                    icon="note-text-outline"
-                    color="#6200EE"
-                    size={36}
-                  />
-                </View>
+                <IconButton icon="note-text-outline" color="#6200EE" size={36} />
                 <View style={styles.textContainer}>
                   <Text style={styles.title}>{task.title}</Text>
                   <Text style={styles.subtitle}>{task.description}</Text>
-                  <View style={styles.priority}>
-                    <Text
-                      style={[
-                        styles.priorityText,
-                        { color: task.priority === "high" ? "#FF3B30" : "#4CAF50" },
-                      ]}
-                    >
-                      {task.priority === "high" ? "Yüksek Öncelik" : "Normal Öncelik"}
-                    </Text>
-                  </View>
+                  <Text style={[styles.priorityText, { color: getPriorityColor(task.priority) }]}>
+                    {task.priority === 'high' ? 'Yüksek Öncelik' : 'Normal Öncelik'}
+                  </Text>
                 </View>
               </View>
-
               <Card.Actions style={styles.actions}>
-                <Button
-                  mode="contained"
-                  icon="check-circle-outline"
-                  color="#4CAF50"
-                  onPress={() => console.log('Onayla butonuna tıklandı')}
-                >
+                <Button 
+                onPress={() => handleCompleted(task.id)}
+                mode="contained" color="#4CAF50">
                   Onayla
                 </Button>
                 <Button
                   mode="outlined"
-                  icon="delete-outline"
                   color="#FF3B30"
-                  onPress={() => console.log('Sil butonuna tıklandı')}
+                  loading={loadingId === task.id}
+                  onPress={() => handleDeleteTodo(task.id)}
                 >
                   Sil
                 </Button>
@@ -59,9 +70,20 @@ const TodoList = ({ tasks, navigation }) => {
             </Card>
           ))
         ) : (
-          <Paragraph style={styles.noTasks}>Görev bulunamadı.</Paragraph>
+          <Paragraph style={styles.noTasks}>
+            <IconButton icon="clipboard-text-outline" size={36} color="#6200EE" />
+            Göreviniz Bulunmamaktadır
+          </Paragraph>
         )}
       </ScrollView>
+      <Snackbar
+        style={{ backgroundColor: '#4CAF50' }}
+        visible={visible}
+        onDismiss={onDismissSnackBar}
+        duration={3000}
+      >
+        Görev başarıyla silindi!
+      </Snackbar>
     </SafeAreaView>
   );
 };
@@ -89,9 +111,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  iconContainer: {
-    marginRight: 12,
-  },
   textContainer: {
     flex: 1,
   },
@@ -105,9 +124,6 @@ const styles = StyleSheet.create({
     color: '#666',
     marginVertical: 4,
   },
-  priority: {
-    marginTop: 8,
-  },
   priorityText: {
     fontSize: 12,
     fontWeight: '600',
@@ -118,10 +134,11 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   noTasks: {
-    textAlign: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     color: '#777',
     fontSize: 16,
-    marginTop: 50,
   },
 });
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Paragraph, Button, FAB } from 'react-native-paper';
@@ -8,6 +8,11 @@ import TodoList from '../components/TodoList';
 const HomeScreen = ({ navigation }) => {
   const { data: tasks, isLoading, error, refetch } = useGetTodoQuery();
 
+  useEffect(() => {
+    refetch()
+  },[])
+  
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -15,7 +20,6 @@ const HomeScreen = ({ navigation }) => {
       </SafeAreaView>
     );
   }
-
   if (error) {
     console.log('Error:', error);
     return (
@@ -28,7 +32,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TodoList tasks={tasks} navigation={navigation} />
+      <TodoList tasks={tasks} navigation={navigation} refetch={refetch} />
       <FAB
         icon="plus"
         style={styles.fab}

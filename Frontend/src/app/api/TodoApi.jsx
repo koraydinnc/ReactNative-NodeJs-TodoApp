@@ -24,7 +24,14 @@ export const todoApi = createApi({
         method: 'GET',
       }),
     }),
+    deleteTodo: builder.mutation({
+       query: (todoId) => ({
+        url:'/delete-todo',
+        method:'DELETE',
+        params: {todoId}
+       })
+     })
   }),
 });
 
-export const { useAddTaskMutation, useGetTodoQuery } = todoApi;
+export const { useAddTaskMutation, useGetTodoQuery, useDeleteTodoMutation } = todoApi;
