@@ -5,7 +5,7 @@ import { Image, ScrollView } from 'react-native';
 
 const OnboardingScreen = ({ onComplete }) => {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <Onboarding
         pages={[
           {
@@ -32,6 +32,7 @@ const OnboardingScreen = ({ onComplete }) => {
         nextLabel="Sonraki"
         skipLabel="Geç"
         bottomBarColor="#fff"
+        backgroundColor="#fff"
       />
 
       </SafeAreaView>
