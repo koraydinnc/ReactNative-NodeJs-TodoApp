@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, ScrollView, View, Alert } from 'react-native';
-import { Card, IconButton, Paragraph, Button, Text, Snackbar } from 'react-native-paper';
+import { Card, IconButton, Paragraph, Button, Text, Snackbar, RadioButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCompletedTodoMutation, useDeleteTodoMutation } from '../app/api/TodoApi';
 
@@ -8,17 +8,18 @@ const TodoList = ({ tasks, navigation, refetch }) => {
   const [deleteTodo] = useDeleteTodoMutation();
   const [completedTodo] = useCompletedTodoMutation();
   const [loadingId, setLoadingId] = useState(null);
-  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '', error: false });
 
   const handleDeleteTodo = async (id) => {
     setLoadingId(id);
     try {
       await deleteTodo(id).unwrap();
-      refetch();
-      setSnackbar({ visible: true, message: 'Görev başarıyla silindi!' });
+      await refetch();
+      setSnackbar({ visible: true, message: 'Görev başarıyla silindi!', error: false });
     } catch (error) {
       console.error('Görev silme hatası:', error);
       Alert.alert('Hata', 'Görev silinirken bir sorun oluştu.');
+      setSnackbar({ visible: true, message: 'Görev silinirken bir hata oluştu!', error: true });
     } finally {
       setLoadingId(null);
     }
@@ -27,68 +28,59 @@ const TodoList = ({ tasks, navigation, refetch }) => {
   const handleCompleted = async (id) => {
     try {
       await completedTodo(id).unwrap();
-      refetch();
-      setSnackbar({ visible: true, message: 'Görev başarıyla tamamlandı!' });
+      await refetch();
+      setSnackbar({ visible: true, message: 'Görev başarıyla tamamlandı!', error: false });
     } catch (error) {
       console.error('Tamamlama hatası:', error);
       Alert.alert('Hata', 'Görev tamamlanırken bir sorun oluştu.');
+      setSnackbar({ visible: true, message: 'Görev tamamlanırken bir hata oluştu!', error: true });
     }
   };
 
   const getPriorityColor = (priority) => (priority === 'high' ? '#FF3B30' : '#4CAF50');
-  const getTodoCompleted = (completed) => (completed === true ? 'line-through' : null)
+
+  const getTextDecoration = (completed) => (completed ? 'line-through' : 'none');
+
+  const sortedTasks = [...(tasks?.todos || [])].sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        {tasks && tasks.todos && tasks.todos.length > 0 ? (
-          tasks.todos.map((task) => (
+        {sortedTasks.length > 0 ? (
+          sortedTasks.map((task) => (
             <Card
               key={task.id}
               style={styles.card}
               onPress={() => navigation.navigate('Todo', { screen: 'TodoDetail', params: { task } })}
-              >
+            >
               <View style={styles.cardContent}>
                 <IconButton icon="note-text-outline" color="#6200EE" size={36} />
                 <View style={styles.textContainer}>
-                  <Text style={{textDecorationLine: task.completed ? 'line-through':'none'}} >{task.title}</Text>
+                  <Text style={{ textDecorationLine: getTextDecoration(task.completed) }}>{task.title}</Text>
                   <Text style={styles.subtitle}>{task.description}</Text>
                   <Text style={[styles.priorityText, { color: getPriorityColor(task.priority) }]}>
                     {task.priority === 'high' ? 'Yüksek Öncelik' : 'Normal Öncelik'}
                   </Text>
                 </View>
               </View>
-              <Card.Actions style={styles.actions}>
-                <Button
-                  onPress={() => handleCompleted(task.id)}
-                  mode="contained-tonal"
-                  color="#4CAF50"
-                >
-                  {task.completed ? 'Vazgeç' : 'Onayla'}
-                </Button>
-                <Button
-                  mode="outlined"
-                  color="#FF3B30"
-                  loading={loadingId === task.id}
-                  onPress={() => handleDeleteTodo(task.id)}
-                >
-                  Sil
-                </Button>
-              </Card.Actions>
+             
             </Card>
           ))
         ) : (
-          <Paragraph style={styles.noTasks}>
+          <SafeAreaView style={styles.noTasksContainer}>
             <IconButton icon="clipboard-text-outline" size={36} color="#6200EE" />
-            Göreviniz Bulunmamaktadır
-          </Paragraph>
+            <Text style={styles.noTasksText}>Göreviniz Bulunmamaktadır</Text>
+          </SafeAreaView>
         )}
       </ScrollView>
 
       <Snackbar
-        style={{ backgroundColor: '#4CAF50' }}
+        style={{ backgroundColor: snackbar.error ? '#FF3B30' : '#4CAF50' }}
         visible={snackbar.visible}
-        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        onDismiss={() => setSnackbar({ visible: false, message: '', error: false })}
         duration={3000}
       >
         {snackbar.message}
@@ -101,7 +93,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFF',
-    height:'100vh',
+    height: '100vh',
   },
   content: {
     padding: 16,
@@ -143,12 +135,16 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingRight: 16,
   },
-  noTasks: {
+  noTasksContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    color: '#777',
+    paddingTop: 50,
+  },
+  noTasksText: {
     fontSize: 16,
+    color: '#777',
+    textAlign: 'center',
   },
 });
 

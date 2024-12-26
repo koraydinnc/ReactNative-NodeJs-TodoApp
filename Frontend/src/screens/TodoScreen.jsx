@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button } from 'react-native-paper';
+import { Card, Title, Paragraph, Button, Text } from 'react-native-paper';
 import { BarChart } from 'react-native-chart-kit'; 
 import { Dimensions } from 'react-native';
 import { useGetTodoQuery } from '../app/api/TodoApi';
@@ -9,8 +9,13 @@ const screenWidth = Dimensions.get("window").width;
 
 const TodoScreen = ({ navigation }) => {
 
-   const {data, refetch, isLoading} = useGetTodoQuery()
+   const {data, refetch, isLoading, isError} = useGetTodoQuery()
    console.log(data)
+
+
+   if(isError) {
+     return <View><Text>Bir hata oluştu!</Text></View>
+   }
 
    useEffect(() => {
        refetch()

@@ -3,6 +3,8 @@ import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { Agenda, LocaleConfig } from 'react-native-calendars';
 import moment from 'moment';
 import { AntDesign } from '@expo/vector-icons';
+import { RadioButton } from 'react-native-paper';
+import TodoCompleted from './TodoCompleted';
 LocaleConfig.locales['tr'] = {
   dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
   dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
@@ -22,7 +24,7 @@ const TodoCalendar = ({ todos, refetch, isLoading }) => {
   useEffect(() => {
     const formatTodosForAgenda = (todos) => {
       const formatted = {};
-
+     console.log(todos, 'todos');
       todos.forEach((todo) => {
         const date = moment(todo.createdAt).format('YYYY-MM-DD');
         if (!formatted[date]) {
@@ -51,31 +53,33 @@ const TodoCalendar = ({ todos, refetch, isLoading }) => {
     <View style={[styles.card, item.completed && styles.completedCard]}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardTitle, item.completed && styles.completedText]}>{item.name}</Text>
-        {item.completed && <AntDesign name="checkcircle" size={16} color="#4caf50" />}
+        <View style={styles.todoCompletedContainer}>
+          <TodoCompleted />
+        </View>
       </View>
       <Text style={styles.cardDescription}>{item.description}</Text>
       <View style={styles.cardFooter}>
         <Text style={[styles.tag, styles.categoryTag]}>{item.category}</Text>
         <Text
-  style={[
-    styles.tag,
-    item.priority === 'high'
-      ? styles.highPriority
-      : item.priority === 'medium'
-      ? styles.mediumPriority
-      : styles.lowPriority, 
-  ]}
->
-  {item.priority === 'high'
-    ? 'Yüksek'
-    : item.priority === 'medium'
-    ? 'Orta'
-    : 'Düşük'} 
-</Text>
-
+          style={[
+            styles.tag,
+            item.priority === 'high'
+              ? styles.highPriority
+              : item.priority === 'medium'
+              ? styles.mediumPriority
+              : styles.lowPriority,
+          ]}
+        >
+          {item.priority === 'high'
+            ? 'Yüksek'
+            : item.priority === 'medium'
+            ? 'Orta'
+            : 'Düşük'}
+        </Text>
       </View>
     </View>
   );
+  
   
   if (isLoading) {
     return (
@@ -172,5 +176,10 @@ const styles = StyleSheet.create({
     mediumPriority: {
       backgroundColor: '#ccc',
     },
+    todoCompletedContainer: {
+      position:'absolute',
+      top:8,
+      right:8,
+    }
   });
   
