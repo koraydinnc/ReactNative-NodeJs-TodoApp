@@ -1,10 +1,10 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Button, Paragraph, Title } from "react-native-paper";
+import { Button, Paragraph,Title } from "react-native-paper";
 
 const TaskDetails = ({ route, navigation }) => {
     const { task } = route.params; 
   
-    console.log('Task:', task.title); 
+    console.log('Task:', task); 
     if (!task) {
       return <Paragraph>Görev bilgisi bulunamadı!</Paragraph>;
     }
@@ -12,7 +12,7 @@ const TaskDetails = ({ route, navigation }) => {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.detailsContainer}>
-          <Title style={styles.taskTitle}>{task.title}</Title>
+          <name style={styles.taskname}>{task.name}</name>
           <Paragraph style={styles.taskDescription}>{task.description}</Paragraph>
           <Button
             mode="contained"
@@ -41,7 +41,7 @@ const TaskDetails = ({ route, navigation }) => {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    taskTitle: {
+    taskname: {
       fontSize: 24,
       fontWeight: 'bold',
       color: '#3e4a61',

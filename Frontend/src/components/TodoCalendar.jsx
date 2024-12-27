@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { Agenda, LocaleConfig } from 'react-native-calendars';
 import moment from 'moment';
-import { AntDesign } from '@expo/vector-icons';
-import { RadioButton } from 'react-native-paper';
-import TodoCompleted from './TodoCompleted';
+import TodoList from './TodoList';
 LocaleConfig.locales['tr'] = {
   dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
   dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
@@ -17,20 +15,22 @@ LocaleConfig.locales['tr'] = {
   ],
 };
 LocaleConfig.defaultLocale = 'tr';
-
 const TodoCalendar = ({ todos, refetch, isLoading }) => {
   const [agendaItems, setAgendaItems] = useState({});
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
+
+  
 
   useEffect(() => {
     const formatTodosForAgenda = (todos) => {
       const formatted = {};
-     console.log(todos, 'todos');
       todos.forEach((todo) => {
         const date = moment(todo.createdAt).format('YYYY-MM-DD');
         if (!formatted[date]) {
           formatted[date] = [];
         }
         formatted[date].push({
+          id: todo.id,
           name: todo.title,
           description: todo.description,
           category: todo.category,
@@ -38,69 +38,62 @@ const TodoCalendar = ({ todos, refetch, isLoading }) => {
           completed: todo.completed,
         });
       });
-
       return formatted;
     };
 
     if (todos?.todos?.length) {
       setAgendaItems(formatTodosForAgenda(todos.todos));
     } else {
-      setAgendaItems({}); 
+      setAgendaItems({});
     }
   }, [todos]);
 
-  const renderItem = (item) => (
-    <View style={[styles.card, item.completed && styles.completedCard]}>
-      <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, item.completed && styles.completedText]}>{item.name}</Text>
-        <View style={styles.todoCompletedContainer}>
-          <TodoCompleted />
-        </View>
-      </View>
-      <Text style={styles.cardDescription}>{item.description}</Text>
-      <View style={styles.cardFooter}>
-        <Text style={[styles.tag, styles.categoryTag]}>{item.category}</Text>
-        <Text
-          style={[
-            styles.tag,
-            item.priority === 'high'
-              ? styles.highPriority
-              : item.priority === 'medium'
-              ? styles.mediumPriority
-              : styles.lowPriority,
-          ]}
-        >
-          {item.priority === 'high'
-            ? 'Yüksek'
-            : item.priority === 'medium'
-            ? 'Orta'
-            : 'Düşük'}
-        </Text>
-      </View>
-    </View>
-  );
-  
-  
   if (isLoading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator animating={true} size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ffcc00" />
+      </View>);}
+
+  const renderItem = (item) => {
+
+    return (
+      <View>
+          <ScrollView>
+          <TodoList item={item} />
+          </ScrollView>
       </View>
     );
-  }
+  };
+
+  const handleDateSelection = (date) => {
+    const formattedDate = moment(date).format('YYYY-MM-DD');
+    setSelectedDate(formattedDate);
+  };
+
+  const filteredAgendaItems = {
+    [selectedDate]: agendaItems[selectedDate] || [],
+  };
+
+
 
   return (
     <Agenda
-      items={agendaItems}
-      selected={moment().format('YYYY-MM-DD')}
+      items={filteredAgendaItems}
+      selected={selectedDate}
       renderItem={renderItem}
-      renderEmptyDate={() => (
-        <View style={styles.emptyDate}>
-          <Text style={{ color: '#bbb', fontSize: 14 }}>Bu tarihte görev yok</Text>
-        </View>
-      )}
+      renderEmptyDate={() => {
+        return (
+          <View>
+            <Text style={{ textAlign: 'center', marginTop:44, fontSize: 16, color: '#333' }}>
+               Bu Tarihe Ait Görev Bulunamadı
+            </Text>
+            
+          </View>
+        );
+      }}
       pastScrollRange={1}
       futureScrollRange={1}
+      onDayPress={(day) => handleDateSelection(day.dateString)}
       theme={{
         agendaDayTextColor: '#2d4150',
         agendaDayNumColor: '#2d4150',
@@ -112,74 +105,21 @@ const TodoCalendar = ({ todos, refetch, isLoading }) => {
 };
 
 export default TodoCalendar;
+
 const styles = StyleSheet.create({
-    card: {
-      backgroundColor: '#fff',
-      borderRadius: 8,
-      padding: 12,
-      marginVertical: 8,
-      marginHorizontal: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-      borderLeftWidth: 4,
-      borderLeftColor: '#ff9800', 
-    },
+  
     completedCard: {
       borderLeftColor: '#4caf50', 
     },
-    cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    cardTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: '#333',
-    },
-    completedText: {
-      color: '#4caf50',
-      textDecorationLine: 'line-through',
-    },
-    cardDescription: {
-      fontSize: 14,
-      color: '#666',
-      marginVertical: 8,
-    },
-    cardFooter: {
-      flexDirection: 'row',
-      justifyContent: 'flex-start',
-      marginTop: 8,
-    },
-    tag: {
-      fontSize: 12,
-      fontWeight: '500',
-      color: '#fff',
-      backgroundColor: '#ddd',
-      borderRadius: 12,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      marginRight: 8,
-    },
-    categoryTag: {
-      backgroundColor: '#3f51b5',
-    },
-    highPriority: {
-      backgroundColor: '#e53935',
-    },
-    lowPriority: {
-      backgroundColor: '#43a047',
-    },
-    mediumPriority: {
-      backgroundColor: '#ccc',
-    },
+    
     todoCompletedContainer: {
       position:'absolute',
-      top:8,
-      right:8,
+      top:0,
+      right:0,
+       borderWidth:1,
+       borderRadius:'50%',
+      borderBlockColor:'#4caf50',
+      borderColor:'#4caf50',
     }
   });
   

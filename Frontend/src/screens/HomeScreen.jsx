@@ -5,12 +5,14 @@ import { Paragraph, Button, FAB, Provider as PaperProvider } from 'react-native-
 import { useAddTodoMutation, useGetTodoQuery } from '../app/api/TodoApi';
 import TodoAddModal from '../components/TodoAddModal';
 import TodoCalendar from '../components/TodoCalendar';
-import { AntDesign } from '@expo/vector-icons';
+import { v4 as uuidv4 } from 'uuid';
+import 'react-native-get-random-values';
 
 const HomeScreen = ({ navigation }) => {
   const { data: tasks, isLoading, error, refetch } = useGetTodoQuery();
   const [addTodo] = useAddTodoMutation();
   const [visible, setVisible] = useState(false);
+
 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
@@ -28,7 +30,6 @@ const HomeScreen = ({ navigation }) => {
   }
 
   if (error) {
-    console.log('Error:', error);
     return (
       <SafeAreaView style={styles.safeArea}>
         <Paragraph>Bir hata oluştu: {JSON.stringify(error, null, 2)}</Paragraph>
@@ -39,7 +40,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <PaperProvider>
+      <PaperProvider style={{ flex: 1, backgroundColor: '#fff' }}>
         <TodoCalendar todos={tasks} isLoading={isLoading} navigation={navigation} refetch={refetch} />
         <TodoAddModal
           visible={visible}
@@ -66,8 +67,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#CCC',
+    backgroundColor: '#6200ee', 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
+  
   loading: {
     flex: 1,
     justifyContent: 'center',

@@ -52,28 +52,38 @@ const deleteTodo = async (req, res) => {
     }
 };
 
-const completedTodo = async(req,res) => {
-    const {todoId} = req.query
+const completedTodo = async (req, res) => {
+    const { todoId } = req.query;
 
     if (!todoId) {
-          return res.status(400).json({error: 'TodoId Gerekli'})
+        return res.status(400).json({ error: 'TodoId Gerekli' });
     }
+
     try {
-          const todo = await Todo.findByPk(todoId)
-          if (!todo) {
-              return res.status(404).json({error:'Todo Bulunamadı'})
-          }
+        const todo = await Todo.findByPk(todoId);
+        if (!todo) {
+            return res.status(404).json({ error: 'Todo Bulunamadı' });
+        }
 
+        if (todo.completed) {
+             todo.completed = false;
+        } else {
+            todo.completed = true;
+        }
 
-          todo.completed = true
+        await todo.save();
 
-          await todo.save()
-
-          return res.status(200).json({message:'Todo Başarıyla Tamamlandı', todo})
+        return res.status(200).json({
+            message: todo.completed ? 'Todo Başarıyla Tamamlandı' : 'Todo Tamamlanmadı',
+            todo
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Todo tamamlanamadı.", details: error.message });
     }
- }
+};
+
+
+
 
 module.exports = { getTodos, addTodo, deleteTodo, completedTodo };

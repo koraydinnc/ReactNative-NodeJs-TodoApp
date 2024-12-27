@@ -10,7 +10,6 @@ const screenWidth = Dimensions.get("window").width;
 const TodoScreen = ({ navigation }) => {
 
    const {data, refetch, isLoading, isError} = useGetTodoQuery()
-   console.log(data)
 
 
    if(isError) {
@@ -24,7 +23,6 @@ const TodoScreen = ({ navigation }) => {
    const totalCompleted = data.todos?.filter((todo) => todo.completed === true);
    const totalPending = data.todos?.filter((todo) => todo.completed === false);
 
-   console.log(totalPending)
    
    const chartData = {
      labels: ['Tamamlandı', 'Devam Ediyor'],

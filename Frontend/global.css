@@ -1,3 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  background-color: black;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: black;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: black;
+}
+
+.slick-track {
+  display: flex !important;
+  gap: 0.5rem;
+  margin-left: 0 !important;
+}
+
+.slick-slide {
+  height: inherit !important;
+}
+
+.slick-slide > div {
+  height: 100%;
+}
+
+@media (hover: hover) {
+  .slick-slide:hover {
+    cursor: grab;
+  }
+
+  .slick-slide:active {
+    cursor: grabbing;
+  }
+}

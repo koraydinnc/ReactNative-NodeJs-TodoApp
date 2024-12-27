@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { Modal, Portal, Text, TextInput, Button, RadioButton } from 'react-native-paper';
+import { Modal, Portal, Text, TextInput, Button, RadioButton, Snackbar } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 
 const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
@@ -8,6 +8,7 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('İş');
   const [priority, setPriority] = useState('medium');
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
 
   const addTask = async () => {
     if (!title || !description) {
@@ -30,8 +31,10 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
       setPriority('medium');
       refetch();
       hideModal();
+
+      setSnackbar({ visible: true, message: 'Görev başarıyla eklendi!' });
     } catch (err) {
-      console.error("Error adding task:", err);
+      console.error('Error adding task:', err);
     }
   };
 
@@ -44,6 +47,7 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
       >
         <Text style={styles.modalTitle}>Yeni Görev Ekle</Text>
         <TextInput
+          autoFocus={true}
           mode="outlined"
           label="Görev Başlığı"
           value={title}
@@ -60,6 +64,7 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
 
         <Text>Kategori Seçin</Text>
         <Picker
+          autoFocus={true}
           selectedValue={category}
           onValueChange={(itemValue) => setCategory(itemValue)}
           style={styles.picker}
@@ -88,6 +93,15 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
           Görevi Ekle
         </Button>
       </Modal>
+
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        duration={3000}
+        style={{ backgroundColor: '#4CAF50' }}
+      >
+        {snackbar.message}
+      </Snackbar>
     </Portal>
   );
 };
