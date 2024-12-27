@@ -94,15 +94,24 @@ const getDateTodos = async (req, res) => {
   
     try {
 
-
+        const startOfDay = new Date(date); 
+        startOfDay.setHours(0, 0, 0, 0);
+    
+        const endOfDay = new Date(date); 
+        endOfDay.setHours(23, 59, 59, 999);
 
         const todos = await Todo.findAll({
             where: {
               createdAt: {
-                [Op.gte]: date,
+                [Op.gte]: startOfDay,
+                [Op.lte]: endOfDay
               },
             },
           });  
+
+          if (todos.length === 0) {
+              return res.status(400).json({message:'Bu tarihe ait todo bulunamadı'})
+          }
       return res.status(200).json({ todos });
     } catch (error) {
       console.error('Error fetching todos:', error);
