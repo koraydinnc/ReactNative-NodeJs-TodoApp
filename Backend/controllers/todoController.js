@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const Todo = require('../models/Todo');
 
 const addTodo = async (req, res) => {
@@ -84,6 +85,31 @@ const completedTodo = async (req, res) => {
 };
 
 
+const getDateTodos = async (req, res) => {
+    const { date } = req.query;
+  
+    if (!date) {
+      return res.status(400).json({ message: 'Date parameter is required.' });
+    }
+  
+    try {
 
 
-module.exports = { getTodos, addTodo, deleteTodo, completedTodo };
+
+        const todos = await Todo.findAll({
+            where: {
+              createdAt: {
+                [Op.gte]: date,
+              },
+            },
+          });  
+      return res.status(200).json({ todos });
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+    }
+  };
+
+
+
+module.exports = { getTodos, addTodo, deleteTodo, completedTodo, getDateTodos };

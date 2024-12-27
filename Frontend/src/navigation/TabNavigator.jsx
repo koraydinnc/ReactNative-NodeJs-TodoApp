@@ -15,7 +15,7 @@ const TodoStackNavigator = () => {
       <Stack.Screen 
         name="TodoList" 
         component={TodoScreen} 
-        options={{ title: 'Görev Listesi' }}
+        options={{ title: 'Görev Analizi' }}
       />
       <Stack.Screen
         name='TodoDetail'

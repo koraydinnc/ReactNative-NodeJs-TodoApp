@@ -1,19 +1,19 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Button, Paragraph,Title } from "react-native-paper";
+import { Button, Paragraph,Text,Title } from "react-native-paper";
 
-const TaskDetails = ({ route, navigation }) => {
-    const { task } = route.params; 
+const todoDetails = ({ route, navigation }) => {
+    const { todo } = route.params; 
   
-    console.log('Task:', task); 
-    if (!task) {
+    console.log('todo:', todo); 
+    if (!todo) {
       return <Paragraph>Görev bilgisi bulunamadı!</Paragraph>;
     }
   
     return (
       <ScrollView style={styles.container}>
         <View style={styles.detailsContainer}>
-          <name style={styles.taskname}>{task.name}</name>
-          <Paragraph style={styles.taskDescription}>{task.description}</Paragraph>
+          <Text>{todo.name}</Text>
+          <Paragraph>{todo.description}</Paragraph>
           <Button
             mode="contained"
             onPress={() => alert('Görev tamamlandı!')}
@@ -23,7 +23,7 @@ const TaskDetails = ({ route, navigation }) => {
           </Button>
           <Button
             mode="outlined"
-            onPress={() => navigation.navigate('EditTask', { task })}
+            onPress={() => navigation.navigate('Edittodo', { todo })}
             style={styles.editButton}
           >
             Görevi Düzenle
@@ -41,13 +41,13 @@ const TaskDetails = ({ route, navigation }) => {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    taskname: {
+    todoname: {
       fontSize: 24,
       fontWeight: 'bold',
       color: '#3e4a61',
       marginBottom: 10,
     },
-    taskDescription: {
+    todoDescription: {
       fontSize: 16,
       color: '#6e7881',
       marginBottom: 20,
@@ -64,4 +64,4 @@ const TaskDetails = ({ route, navigation }) => {
     },
   });
 
-  export default TaskDetails
+  export default todoDetails
