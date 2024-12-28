@@ -19,7 +19,7 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     refetch();
-  }, []);
+  }, [tasks]);
 
   if (isLoading) {
     return (
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#6200ee', 
+    backgroundColor: '#fff', 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

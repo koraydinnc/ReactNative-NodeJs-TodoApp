@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { Modal, Portal, Text, TextInput, Button, RadioButton, Snackbar } from 'react-native-paper';
+import { Modal, Portal, Text, TextInput, Button, RadioButton, Snackbar, ActivityIndicator } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
+import { useGetDateTodosMutation, useGetTodoQuery } from '../app/api/TodoApi';
 
-const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
+const TodoAddModal = ({ visible, hideModal, addTodo }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('İş');
   const [priority, setPriority] = useState('medium');
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
 
+ 
+ 
+
   const addTask = async () => {
     if (!title || !description) {
-      return;
+      return setSnackbar({visible:true, message:'Başlık ve Açıklama Kısımları Boş Bırakılamaz.', error:true})
     }
 
     const newTask = {
@@ -25,16 +29,16 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
 
     try {
       await addTodo(newTask).unwrap();
+
       setTitle('');
       setDescription('');
       setCategory('İş');
       setPriority('medium');
-      refetch();
       hideModal();
-
       setSnackbar({ visible: true, message: 'Görev başarıyla eklendi!' });
     } catch (err) {
       console.error('Error adding task:', err);
+      setSnackbar({ visible: true, message: 'Görev eklenirken bir hata oluştu.' });
     }
   };
 
@@ -64,7 +68,6 @@ const TodoAddModal = ({ visible, hideModal, addTodo, refetch }) => {
 
         <Text>Kategori Seçin</Text>
         <Picker
-          autoFocus={true}
           selectedValue={category}
           onValueChange={(itemValue) => setCategory(itemValue)}
           style={styles.picker}

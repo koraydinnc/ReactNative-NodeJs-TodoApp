@@ -11,7 +11,6 @@ const App = () => {
 
   const login = async () => {
     try {
-      const loginOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
       setHasSeenOnboarding(!!loginOnboarding);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
@@ -39,7 +38,7 @@ const App = () => {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Loading...</Text>
+     
       </View>
     );
   }

@@ -34,7 +34,14 @@ export const todoApi = createApi({
         params:{todoId}
       })
     }),
+    getDateTodos: builder.mutation({
+      query: (date) => ({
+        url:'/get-date-todos',
+        method:'POST',
+        params: {date}
+      })
+    })
   }),
 });
 
-export const {useAddTodoMutation, useGetTodoQuery, useDeleteTodoMutation, useCompletedTodoMutation } = todoApi;
+export const {useAddTodoMutation, useGetTodoQuery, useDeleteTodoMutation, useCompletedTodoMutation, useGetDateTodosMutation } = todoApi;

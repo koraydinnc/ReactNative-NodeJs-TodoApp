@@ -87,7 +87,7 @@ const completedTodo = async (req, res) => {
 
 const getDateTodos = async (req, res) => {
     const { date } = req.query;
-  
+    console.log(date)
     if (!date) {
       return res.status(400).json({ message: 'Date parameter is required.' });
     }
@@ -109,9 +109,6 @@ const getDateTodos = async (req, res) => {
             },
           });  
 
-          if (todos.length === 0) {
-              return res.status(400).json({message:'Bu tarihe ait todo bulunamadı'})
-          }
       return res.status(200).json({ todos });
     } catch (error) {
       console.error('Error fetching todos:', error);
