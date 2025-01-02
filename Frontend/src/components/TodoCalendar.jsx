@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, ScrollView } from 'react-native';
-import { Agenda } from 'react-native-calendars';
+import {  Agenda, AgendaList } from 'react-native-calendars';
 import { Card, IconButton, RadioButton, Snackbar } from 'react-native-paper';
 import moment from 'moment';
 import { useGetDateTodosMutation, useCompletedTodoMutation, useDeleteTodoMutation } from '../app/api/TodoApi';
@@ -15,49 +15,77 @@ const TodoCalendar = ({navigation}) => {
   
 
   const [deleteTodo] = useDeleteTodoMutation()
-  const [getDateTodos, {isLoading: getDateLoading}] = useGetDateTodosMutation();
-  const [completed, { isLoading: isCompleting }] = useCompletedTodoMutation();
+  const [getDateTodos, {isLoading: getDateLoading, data:getDateData}] = useGetDateTodosMutation();
+  const [completed, { isLoading: isCompleting, data:CompletedData }] = useCompletedTodoMutation();
 
+
+
+
+
+  
   useEffect(() => {
     fetchTodosForDate(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate,CompletedData,handleDeleteTodo]);
 
-  const formatTodosForAgenda = (todosArray) => {
-    const formattedTodos = {};
-    todosArray.forEach((todo) => {
-      const date = moment(todo.createdAt).format('YYYY-MM-DD');
-      if (!formattedTodos[date]) {
-        formattedTodos[date] = [];
-      }
-      formattedTodos[date].push(todo);
-    });
-    return formattedTodos;
-  };
-
+  
   const fetchTodosForDate = async (date) => {
     try {
+      // Fetch todos for the given date
       const response = await getDateTodos(date).unwrap();
-      const formattedTodos = formatTodosForAgenda(response.todos || []);
-      setTodos(formattedTodos);
+  
+      // Use reduce to group todos by their ID
+      const formattedTodos = response.todos.reduce((acc, todo) => { 
+        acc[todo.id] = todo;  // Store each todo by its ID
+        return acc;
+      }, {});  // Initialize the accumulator as an empty object
+  
+   
+      setTodos({ [date]: formattedTodos });
+  
+      // Log the response and formatted todos for debugging
+      console.log(formattedTodos, 'formattedTodos');
+      console.log(response.todos, 'response.todos');
+      
+      // Return the formatted todos (if needed for further processing)
+      return formattedTodos;
     } catch (err) {
       console.error('Error fetching todos:', err);
-      setTodos({});
+      setTodos({});  // Clear the todos on error
       setSnackbarMessage(err?.data?.message || 'Bir hata oluştu.');
       setSnackbarVisible(true);
-    } finally {
     }
   };
+  
 
   const completedTodo = async (id) => {
+    console.log(id, 'id')
     try {
-      await completed(id).unwrap();
-      fetchTodosForDate(selectedDate);
+      const response = await completed(id).unwrap();
+      console.log(response, 'response');
+      if (response.status === 1) {
+        setTodos((prevTodos) => {
+          const updatedTodos = { ...prevTodos };
+  
+          Object.keys(updatedTodos).forEach((date) => {
+            updatedTodos[date] = updatedTodos[date].map((todo) =>
+              todo.id === id ? { ...todo, completed: true } : todo
+            );
+          });
+  
+          return updatedTodos;
+        });
+        setSnackbarMessage(response.message);
+        setSnackbarVisible(true);
+      }
     } catch (error) {
       console.error('Error completing todo:', error);
       setSnackbarMessage('Görev tamamlanamadı, lütfen tekrar deneyin.');
       setSnackbarVisible(true);
     }
   };
+  
+  
+  
 
 
   const handleDeleteTodo = async(id) => {
@@ -72,30 +100,26 @@ const TodoCalendar = ({navigation}) => {
        }
   }
 
-  const renderItem = ({ item }) => {
-    if (!item) return null;
-  
+  const renderItem = (item) => {
+    console.log('Rendering Item:', item);
     return (
-<Card style={styles.todoCard} onPress={() => navigation.navigate('Todo', { screen: 'TodoDetail', params: { todo: item } })}>
-          <Card.Content>
+      <Card style={styles.todoCard}>
+        <Card.Content>
           <View style={styles.headerRow}>
             <Text style={[styles.todoTitle, item.completed && styles.completedText]}>
               {item.title}
             </Text>
             <IconButton
-            animated={true}
-              value={item.id.toString()}
-              status={item.completed ? 'checked' : 'unchecked'}
+              icon={item.completed ? 'check-circle' : 'checkbox-blank-circle-outline'}
+              iconColor="green"
+              animated={true}
               onPress={() => completedTodo(item.id)}
-              disabled={isCompleting}
-              iconColor="green" 
-              icon={item.completed ? 'check-circle' : 'checkbox-blank-circle-outline'}              
             />
-          <IconButton
-          animated={true}
+            <IconButton
+              animated={true}
               icon="delete"
-              onPress={() => handleDeleteTodo(item.id)} 
-              iconColor="red" 
+              iconColor="red"
+              onPress={() => handleDeleteTodo(item.id)}
             />
           </View>
           <Text style={styles.todoDescription}>
@@ -105,14 +129,13 @@ const TodoCalendar = ({navigation}) => {
             <Text style={styles.todoDate}>
               {moment(item.createdAt).format('DD MMM YYYY')}
             </Text>
-            {item.completed && (
-              <Text style={styles.completedLabel}>Tamamlandı</Text>
-            )}
+            {item.completed && <Text style={styles.completedLabel}>Tamamlandı</Text>}
           </View>
         </Card.Content>
       </Card>
     );
   };
+  
   
 
   const renderEmptyData = () => (
@@ -124,51 +147,50 @@ const TodoCalendar = ({navigation}) => {
       </Text>
     </View>
   );
-  
-
-  if (isCompleting || getDateLoading) {
-    return (
-      <View style={{flex:1, alignItems:'center', justifyContent:'center'}}>
-        <ActivityIndicator size="small" color="blue" backgroundColor='transparent' />
-      </View>
-    );
-  }
+   
 
   return (
-    <View  style={{ flex: 1  }}>
-    <Agenda
-  
-  items={todos}
-  renderItem={(item) => renderItem({ item })}
-  renderEmptyData={renderEmptyData}
-  hideKnob={false} 
-  showClosingKnob={true}
-  pastScrollRange={1}
-  futureScrollRange={1}
-  selected={selectedDate}
-  onDayPress={(day) => {
-    if (day.dateString !== selectedDate) {
-      setSelectedDate(day.dateString);
-    }
-  }}
-  theme={{
-    renderItemColor:'#fff',
-    backgroundColor: '#f4f4f4', // Tüm ekranın arka planı
-    calendarBackground: '#fff', // Takvimin arka planı
-    agendaDayTextColor: '#007bff', // Gün ismi rengi
-    agendaDayNumColor: '#007bff', // Gün numarası rengi
-    agendaTodayColor: '#ff5722', // Bugünün rengi
-    agendaKnobColor: '#4caf50', // Knob rengi
-    textSectionTitleColor: '#333', // Ayın gün başlıkları
-    dayTextColor: '#000', // Günlerin yazı rengi
-    selectedDayBackgroundColor: 'red', // Seçili günün arka plan rengi
-    selectedDayTextColor: '#fff', // Seçili gün yazı rengi
-    todayTextColor: '#ff5722', // Bugünün yazı rengi
-    dotColor: '#4caf50', // Günlere nokta eklenmişse rengi
-    selectedDotColor: '#ffffff', // Seçili günün noktası
-  }}
-  
-/>
+    <View style={{ flex: 1 }}>
+      <Agenda
+ keyExtractor={(item, index) => `${item.id}-${index}`}
+ items={todos}
+renderItem={(item, firstItemInDay) => {
+  return (
+    <ScrollView>
+      {renderItem(item, firstItemInDay)}
+    </ScrollView>
+  );
+}}
+
+
+      renderEmptyData={renderEmptyData}
+        hideKnob={false}
+        showClosingKnob={true}
+        pastScrollRange={24}
+        futureScrollRange={24}
+        selected={selectedDate}
+        onDayPress={(day) => {
+          if (day.dateString !== selectedDate) {
+            setSelectedDate(day.dateString);
+          }
+        }}
+        theme={{
+          renderItemColor: '#fff',
+          backgroundColor: '#f4f4f4', // Tüm ekranın arka planı
+          calendarBackground: '#fff', // Takvimin arka planı
+          agendaDayTextColor: '#007bff', // Gün ismi rengi
+          agendaDayNumColor: '#007bff', // Gün numarası rengi
+          agendaTodayColor: '#ff5722', // Bugünün rengi
+          agendaKnobColor: '#4caf50', // Knob rengi
+          textSectionTitleColor: '#333', // Ayın gün başlıkları
+          dayTextColor: '#000', // Günlerin yazı rengi
+          selectedDayBackgroundColor: 'red', // Seçili günün arka plan rengi
+          selectedDayTextColor: '#fff', // Seçili gün yazı rengi
+          todayTextColor: '#ff5722', // Bugünün yazı rengi
+          dotColor: '#4caf50', // Günlere nokta eklenmişse rengi
+          selectedDotColor: '#ffffff', // Seçili günün noktası
+        }}
+      />
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

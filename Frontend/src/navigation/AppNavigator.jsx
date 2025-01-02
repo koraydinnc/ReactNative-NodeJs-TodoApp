@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import TabNavigator from './TabNavigator'; 
+import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 
 const App = () => {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const login = async () => {
+  const fetchOnboardingStatus = async () => {
     try {
-      setHasSeenOnboarding(!!loginOnboarding);
+      const value = await AsyncStorage.getItem('hasSeenOnboarding');
+      return value === 'true';
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('Error fetching onboarding status:', error);
+      return false; 
     }
   };
 
@@ -28,9 +30,11 @@ const App = () => {
 
   useEffect(() => {
     const initialize = async () => {
-      await login();
+      const status = await fetchOnboardingStatus();
+      setHasSeenOnboarding(status);
       setIsLoading(false);
     };
+
     initialize();
   }, []);
 
@@ -38,7 +42,6 @@ const App = () => {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#0000ff" />
-     
       </View>
     );
   }

@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const Todo = require('../models/Todo');
+const moment = require('moment');
 
 const addTodo = async (req, res) => {
     const { title, description, category = "genel", priority = "medium", userId = null, completed = false } = req.body;
@@ -10,7 +11,10 @@ const addTodo = async (req, res) => {
 
     try {
         const todo = await Todo.create({ title, description, category, priority, userId, completed });
-        res.status(201).json({ message: "Todo başarıyla eklendi.", todo });
+        const date = new Date(todo.createdAt).toISOString().split('T')[0];
+        console.log(date, 'date')   
+        
+        res.status(201).json({ message: "Todo başarıyla eklendi.",  });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Todo eklenemedi.", details: error.message });
@@ -53,6 +57,7 @@ const deleteTodo = async (req, res) => {
     }
 };
 
+
 const completedTodo = async (req, res) => {
     const { todoId } = req.query;
 
@@ -66,23 +71,20 @@ const completedTodo = async (req, res) => {
             return res.status(404).json({ error: 'Todo Bulunamadı' });
         }
 
-        if (todo.completed) {
-             todo.completed = false;
-        } else {
-            todo.completed = true;
-        }
-
+        todo.completed = !todo.completed;
         await todo.save();
 
         return res.status(200).json({
             message: todo.completed ? 'Todo Başarıyla Tamamlandı' : 'Todo Tamamlanmadı',
-            todo
+            todo,
+            status: 1,
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Todo tamamlanamadı.", details: error.message });
     }
 };
+
 
 
 const getDateTodos = async (req, res) => {
@@ -103,11 +105,11 @@ const getDateTodos = async (req, res) => {
         const todos = await Todo.findAll({
             where: {
               createdAt: {
-                [Op.gte]: startOfDay,
-                [Op.lte]: endOfDay
+                [Op.between]: [startOfDay, endOfDay],
               },
             },
-          });  
+          });
+            
 
       return res.status(200).json({ todos });
     } catch (error) {

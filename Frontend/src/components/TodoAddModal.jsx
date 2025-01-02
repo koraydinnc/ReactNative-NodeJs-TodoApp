@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { Modal, Portal, Text, TextInput, Button, RadioButton, Snackbar, ActivityIndicator } from 'react-native-paper';
+import { Modal, Portal, Text, TextInput, Button, RadioButton, Snackbar } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
-import { useGetDateTodosMutation, useGetTodoQuery } from '../app/api/TodoApi';
 
 const TodoAddModal = ({ visible, hideModal, addTodo }) => {
   const [title, setTitle] = useState('');

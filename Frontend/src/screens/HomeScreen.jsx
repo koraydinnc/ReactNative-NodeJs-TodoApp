@@ -5,14 +5,13 @@ import { Paragraph, Button, FAB, Provider as PaperProvider } from 'react-native-
 import { useAddTodoMutation, useGetTodoQuery } from '../app/api/TodoApi';
 import TodoAddModal from '../components/TodoAddModal';
 import TodoCalendar from '../components/TodoCalendar';
-import { v4 as uuidv4 } from 'uuid';
 import 'react-native-get-random-values';
 
 const HomeScreen = ({ navigation }) => {
   const { data: tasks, isLoading, error, refetch } = useGetTodoQuery();
   const [addTodo] = useAddTodoMutation();
   const [visible, setVisible] = useState(false);
-
+   
 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
@@ -21,13 +20,6 @@ const HomeScreen = ({ navigation }) => {
     refetch();
   }, [tasks]);
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ActivityIndicator animating={true} size="large" style={styles.loading} />
-      </SafeAreaView>
-    );
-  }
 
   if (error) {
     return (
@@ -41,7 +33,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <PaperProvider style={{ flex: 1, backgroundColor: '#fff' }}>
-        <TodoCalendar todos={tasks} isLoading={isLoading} navigation={navigation} refetch={refetch} />
+        <TodoCalendar todos={tasks}  navigation={navigation} refetch={refetch} />
         <TodoAddModal
           visible={visible}
           hideModal={hideModal}
