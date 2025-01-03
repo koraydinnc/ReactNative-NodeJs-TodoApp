@@ -1,38 +1,62 @@
 const { Op } = require('sequelize');
 const Todo = require('../models/Todo');
-const moment = require('moment');
+const { validateTodo } = require('../validators/todoValidator');
 
 const addTodo = async (req, res) => {
-    const { title, description, category = "genel", priority = "medium", userId = null, completed = false } = req.body;
-
-    if (!title) {
-        return res.status(400).json({ error: "Başlık zorunludur." });
-    }
-
     try {
-        const todo = await Todo.create({ title, description, category, priority, userId, completed });
-        const date = new Date(todo.createdAt).toISOString().split('T')[0];
-        console.log(date, 'date')   
+        const todoData = validateTodo(req.body);
+        const todo = await Todo.create(todoData);
         
-        res.status(201).json({ message: "Todo başarıyla eklendi.",  });
+        res.status(201).json({
+            success: true,
+            message: "Todo başarıyla eklendi.",
+            data: todo
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Todo eklenemedi.", details: error.message });
+        res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Todo eklenemedi."
+        });
     }
 };
 
 const getTodos = async (req, res) => {
-    const { userId = null } = req.query;
-
     try {
-        const todos = userId
-            ? await Todo.findAll({ where: { userId } })
-            : await Todo.findAll(); 
+        const { userId, status, priority, startDate, endDate } = req.query;
+        
+        const whereClause = {};
+        if (userId) whereClause.userId = userId;
+        if (status) whereClause.completed = status === 'completed';
+        if (priority) whereClause.priority = priority;
+        
+        if (startDate && endDate) {
+            whereClause.createdAt = {
+                [Op.between]: [
+                    new Date(startDate).setHours(0, 0, 0, 0),
+                    new Date(endDate).setHours(23, 59, 59, 999)
+                ]
+            };
+        }
 
-        res.status(200).json({ message: "Todolar getirildi.", todos });
+        const todos = await Todo.findAll({ 
+            where: whereClause,
+            order: [
+                ['priority', 'DESC'],
+                ['createdAt', 'DESC']
+            ]
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Todolar başarıyla getirildi.",
+            data: todos
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Todo'lar getirilemedi.", details: error.message });
+        res.status(500).json({
+            success: false,
+            message: "Todo'lar getirilemedi.",
+            error: error.message
+        });
     }
 };
 
@@ -89,13 +113,12 @@ const completedTodo = async (req, res) => {
 
 const getDateTodos = async (req, res) => {
     const { date } = req.query;
-    console.log(date)
+    
     if (!date) {
-      return res.status(400).json({ message: 'Date parameter is required.' });
+        return res.status(400).json({ message: 'Date parameter is required.' });
     }
   
     try {
-
         const startOfDay = new Date(date); 
         startOfDay.setHours(0, 0, 0, 0);
     
@@ -104,20 +127,58 @@ const getDateTodos = async (req, res) => {
 
         const todos = await Todo.findAll({
             where: {
-              createdAt: {
-                [Op.between]: [startOfDay, endOfDay],
-              },
+                createdAt: {
+                    [Op.between]: [startOfDay, endOfDay],
+                },
             },
-          });
-            
+        });
 
-      return res.status(200).json({ todos });
+      
+        const formattedData = {
+            [date]: todos.map(todo => ({
+                name: todo.title,
+                completed: todo.completed,
+                priority: todo.priority,
+                id: todo.id,
+                category: todo.category,
+                description: todo.description,
+               
+            }))
+        };
+
+        return res.status(200).json(formattedData);
     } catch (error) {
-      console.error('Error fetching todos:', error);
-      return res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error fetching todos:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
-  };
+};
 
+const updateTodo = async (req, res) => {
+    try {
+        const { todoId } = req.params;
+        const updates = validateTodo(req.body, true);
 
+        const todo = await Todo.findByPk(todoId);
+        if (!todo) {
+            return res.status(404).json({
+                success: false,
+                message: "Todo bulunamadı."
+            });
+        }
 
-module.exports = { getTodos, addTodo, deleteTodo, completedTodo, getDateTodos };
+        await todo.update(updates);
+        
+        res.status(200).json({
+            success: true,
+            message: "Todo başarıyla güncellendi.",
+            data: todo
+        });
+    } catch (error) {
+        res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Todo güncellenemedi."
+        });
+    }
+};
+
+module.exports = { getTodos, addTodo, deleteTodo, completedTodo, getDateTodos, updateTodo };

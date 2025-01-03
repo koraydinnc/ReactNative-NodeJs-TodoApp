@@ -40,8 +40,15 @@ export const todoApi = createApi({
         method:'POST',
         params: {date}
       })
+    }),
+    updateTodo: builder.mutation({
+      query: (todoId, updates) => ({
+        url: `/update-todo/${todoId}`,
+        method: 'PUT',
+        body: updates
+      })
     })
   }),
 });
 
-export const {useAddTodoMutation, useGetTodoQuery, useDeleteTodoMutation, useCompletedTodoMutation, useGetDateTodosMutation } = todoApi;
+ export const {useAddTodoMutation,useUpdateTodoMutation, useGetTodoQuery, useDeleteTodoMutation, useCompletedTodoMutation, useGetDateTodosMutation } = todoApi;

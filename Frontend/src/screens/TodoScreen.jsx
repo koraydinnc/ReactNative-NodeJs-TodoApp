@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button, Text } from 'react-native-paper';
+import { Card, Title, Paragraph, Button, Text, ActivityIndicator } from 'react-native-paper';
 import { BarChart } from 'react-native-chart-kit'; 
 import { Dimensions } from 'react-native';
 import { useGetTodoQuery } from '../app/api/TodoApi';
@@ -8,27 +8,29 @@ import { useGetTodoQuery } from '../app/api/TodoApi';
 const screenWidth = Dimensions.get("window").width;
 
 const TodoScreen = ({ navigation }) => {
-
    const {data, refetch, isLoading, isError} = useGetTodoQuery()
-
+   
+   useEffect(() => {
+       refetch()
+   },[])
 
    if(isError) {
      return <View><Text>Bir hata oluştu!</Text></View>
    }
 
-   useEffect(() => {
-       refetch()
-   },[])
+   if(isLoading || !data?.data) {
+     return <ActivityIndicator style={{flex:1, justifyContent:'center', alignItems:'center'}} size="large" color="#0000ff" />
+   }
 
-   const totalCompleted = data.todos?.filter((todo) => todo.completed === true);
-   const totalPending = data.todos?.filter((todo) => todo.completed === false);
+   const totalCompleted = data.data.filter((todo) => todo.completed === true);
+   const totalPending = data.data.filter((todo) => todo.completed === false);
 
    
    const chartData = {
      labels: ['Tamamlandı', 'Devam Ediyor'],
      datasets: [
        {
-         data: [totalCompleted.length, totalPending.length]
+         data: [totalCompleted?.length || 0, totalPending?.length || 0]
        },
      ],
    };

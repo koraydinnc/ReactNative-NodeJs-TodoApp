@@ -1,289 +1,391 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, ScrollView } from 'react-native';
-import {  Agenda, AgendaList } from 'react-native-calendars';
-import { Card, IconButton, RadioButton, Snackbar } from 'react-native-paper';
-import moment from 'moment';
-import { useGetDateTodosMutation, useCompletedTodoMutation, useDeleteTodoMutation } from '../app/api/TodoApi';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Alert } from 'react-native';
+import { Agenda } from 'react-native-calendars';
+import { useCompletedTodoMutation, useGetDateTodosMutation, useDeleteTodoMutation } from '../app/api/TodoApi';
+import { IconButton, Surface } from 'react-native-paper';
+import { format } from 'date-fns';
+import { LocaleConfig } from 'react-native-calendars';
 
-const TodoCalendar = ({navigation}) => {
-  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
-  const [todos, setTodos] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  
-
-  const [deleteTodo] = useDeleteTodoMutation()
-  const [getDateTodos, {isLoading: getDateLoading, data:getDateData}] = useGetDateTodosMutation();
-  const [completed, { isLoading: isCompleting, data:CompletedData }] = useCompletedTodoMutation();
-
-
-
-
-
-  
-  useEffect(() => {
-    fetchTodosForDate(selectedDate);
-  }, [selectedDate,CompletedData,handleDeleteTodo]);
-
-  
-  const fetchTodosForDate = async (date) => {
-    try {
-      // Fetch todos for the given date
-      const response = await getDateTodos(date).unwrap();
-  
-      // Use reduce to group todos by their ID
-      const formattedTodos = response.todos.reduce((acc, todo) => { 
-        acc[todo.id] = todo;  // Store each todo by its ID
-        return acc;
-      }, {});  // Initialize the accumulator as an empty object
-  
-   
-      setTodos({ [date]: formattedTodos });
-  
-      // Log the response and formatted todos for debugging
-      console.log(formattedTodos, 'formattedTodos');
-      console.log(response.todos, 'response.todos');
-      
-      // Return the formatted todos (if needed for further processing)
-      return formattedTodos;
-    } catch (err) {
-      console.error('Error fetching todos:', err);
-      setTodos({});  // Clear the todos on error
-      setSnackbarMessage(err?.data?.message || 'Bir hata oluştu.');
-      setSnackbarVisible(true);
-    }
-  };
-  
-
-  const completedTodo = async (id) => {
-    console.log(id, 'id')
-    try {
-      const response = await completed(id).unwrap();
-      console.log(response, 'response');
-      if (response.status === 1) {
-        setTodos((prevTodos) => {
-          const updatedTodos = { ...prevTodos };
-  
-          Object.keys(updatedTodos).forEach((date) => {
-            updatedTodos[date] = updatedTodos[date].map((todo) =>
-              todo.id === id ? { ...todo, completed: true } : todo
-            );
-          });
-  
-          return updatedTodos;
-        });
-        setSnackbarMessage(response.message);
-        setSnackbarVisible(true);
-      }
-    } catch (error) {
-      console.error('Error completing todo:', error);
-      setSnackbarMessage('Görev tamamlanamadı, lütfen tekrar deneyin.');
-      setSnackbarVisible(true);
-    }
-  };
-  
-  
-  
-
-
-  const handleDeleteTodo = async(id) => {
-       try {
-              await deleteTodo(id).unwrap();
-              await fetchTodosForDate(selectedDate)
-              setSnackbarMessage('Görev Başarıyla Silindi!')
-              setSnackbarMessage(true)
-       } catch (error) {
-              setSnackbarMessage('Görev Silinirken Bir Hata Oluştur, Lütfen Tekrar Deneyin!')
-              setSnackbarMessage(true)
-       }
-  }
-
-  const renderItem = (item) => {
-    console.log('Rendering Item:', item);
-    return (
-      <Card style={styles.todoCard}>
-        <Card.Content>
-          <View style={styles.headerRow}>
-            <Text style={[styles.todoTitle, item.completed && styles.completedText]}>
-              {item.title}
-            </Text>
-            <IconButton
-              icon={item.completed ? 'check-circle' : 'checkbox-blank-circle-outline'}
-              iconColor="green"
-              animated={true}
-              onPress={() => completedTodo(item.id)}
-            />
-            <IconButton
-              animated={true}
-              icon="delete"
-              iconColor="red"
-              onPress={() => handleDeleteTodo(item.id)}
-            />
-          </View>
-          <Text style={styles.todoDescription}>
-            {item.description || 'Açıklama bulunmuyor.'}
-          </Text>
-          <View style={styles.footerRow}>
-            <Text style={styles.todoDate}>
-              {moment(item.createdAt).format('DD MMM YYYY')}
-            </Text>
-            {item.completed && <Text style={styles.completedLabel}>Tamamlandı</Text>}
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
-  
-  
-
-  const renderEmptyData = () => (
-    <View style={styles.emptyState}>
-      <MaterialIcons name="event-busy" size={50} color="#FF6F61" />
-      <Text style={styles.emptyText}>Seçili Güne Ait Görev Bulunamadı!</Text>
-      <Text style={styles.suggestionText}>
-        Yeni bir görev ekleyerek başlayabilirsiniz.
-      </Text>
-    </View>
-  );
-   
-
-  return (
-    <View style={{ flex: 1 }}>
-      <Agenda
- keyExtractor={(item, index) => `${item.id}-${index}`}
- items={todos}
-renderItem={(item, firstItemInDay) => {
-  return (
-    <ScrollView>
-      {renderItem(item, firstItemInDay)}
-    </ScrollView>
-  );
-}}
-
-
-      renderEmptyData={renderEmptyData}
-        hideKnob={false}
-        showClosingKnob={true}
-        pastScrollRange={24}
-        futureScrollRange={24}
-        selected={selectedDate}
-        onDayPress={(day) => {
-          if (day.dateString !== selectedDate) {
-            setSelectedDate(day.dateString);
-          }
-        }}
-        theme={{
-          renderItemColor: '#fff',
-          backgroundColor: '#f4f4f4', // Tüm ekranın arka planı
-          calendarBackground: '#fff', // Takvimin arka planı
-          agendaDayTextColor: '#007bff', // Gün ismi rengi
-          agendaDayNumColor: '#007bff', // Gün numarası rengi
-          agendaTodayColor: '#ff5722', // Bugünün rengi
-          agendaKnobColor: '#4caf50', // Knob rengi
-          textSectionTitleColor: '#333', // Ayın gün başlıkları
-          dayTextColor: '#000', // Günlerin yazı rengi
-          selectedDayBackgroundColor: 'red', // Seçili günün arka plan rengi
-          selectedDayTextColor: '#fff', // Seçili gün yazı rengi
-          todayTextColor: '#ff5722', // Bugünün yazı rengi
-          dotColor: '#4caf50', // Günlere nokta eklenmişse rengi
-          selectedDotColor: '#ffffff', // Seçili günün noktası
-        }}
-      />
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
-        elevation={5}
-        error={true}
-      >
-        {snackbarMessage}
-      </Snackbar>
-    </View>
-  );
+// Türkçe locale ayarlarını ekleyelim
+LocaleConfig.locales['tr'] = {
+  monthNames: [
+    'Ocak',
+    'Şubat',
+    'Mart',
+    'Nisan',
+    'Mayıs',
+    'Haziran',
+    'Temmuz',
+    'Ağustos',
+    'Eylül',
+    'Ekim',
+    'Kasım',
+    'Aralık'
+  ],
+  monthNamesShort: ['Oca.', 'Şub.', 'Mar.', 'Nis.', 'May.', 'Haz.', 'Tem.', 'Ağu.', 'Eyl.', 'Eki.', 'Kas.', 'Ara.'],
+  dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+  dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
+  today: 'Bugün'
 };
 
-export default TodoCalendar;
+LocaleConfig.defaultLocale = 'tr';
+
+const getPriorityColor = (priority) => {
+  switch (priority) {
+    case 'high':
+      return '#FF5252';
+    case 'medium':
+      return '#FFA726';
+    case 'low':
+      return '#66BB6A';
+    default:
+      return '#757575';
+  }
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'İş':
+      return 'briefcase';
+    case 'Kişisel':
+      return 'account';
+    case 'Alışveriş':
+      return 'cart';
+    case 'Sağlık':
+      return 'hospital';
+    default:
+      return 'format-list-bulleted';
+  }
+};
+
+const priorityConfig = {
+  high: {
+    color: '#FF5252',
+    label: 'Yüksek',
+    icon: 'alert-circle'
+  },
+  medium: {
+    color: '#FFA726',
+    label: 'Orta',
+    icon: 'alert'
+  },
+  low: {
+    color: '#66BB6A',
+    label: 'Düşük',
+    icon: 'alert-circle-outline'
+  }
+};
+
+const TodoCalendar = () => {
+   const [items, setItems] = useState({});
+   const [refreshing, setRefreshing] = useState(false); 
+   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+   
+   const [getTodoDate] = useGetDateTodosMutation();
+const [completeTodo] = useCompletedTodoMutation();
+const [deleteTodo] = useDeleteTodoMutation();
+   const renderItem = (item) => {
+    const priorityDetails = priorityConfig[item.priority];
+    
+    return (
+      <Surface style={styles.item} elevation={2}>
+        <View style={styles.itemHeader}>
+          <View style={[styles.priorityBadge, { backgroundColor: priorityDetails.color }]}>
+            <IconButton icon={priorityDetails.icon} size={16} iconColor="#FFF" />
+            <Text style={styles.priorityText}>{priorityDetails.label}</Text>
+          </View>
+          <View style={styles.actionButtons}>
+            <IconButton
+              icon={item.completed ? "check-circle" : "circle-outline"}
+              iconColor={item.completed ? '#4CAF50' : '#757575'}
+              size={24}
+              onPress={() => handleCheck(item.id)}
+              style={styles.iconButton}
+            />
+            <IconButton
+              icon="delete-outline"
+              iconColor="#FF5252"
+              size={24}
+              onPress={() => handleDelete(item.id)}
+              style={styles.iconButton}
+            />
+          </View>
+        </View>
+        
+        <View style={styles.contentContainer}>
+          <Text style={[
+            styles.itemTitle,
+            item.completed && styles.completedText
+          ]}>{item.name}</Text>
+          
+          {item.description && (
+            <Text style={[
+              styles.itemDescription,
+              item.completed && styles.completedText
+            ]}>{item.description}</Text>
+          )}
+          
+          <View style={styles.metaContainer}>
+            <View style={styles.categoryBadge}>
+              <IconButton
+                icon={getCategoryIcon(item.category)}
+                size={16}
+                iconColor="#757575"
+              />
+              <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+          </View>
+        </View>
+      </Surface>
+    );
+   };
+
+   const fetchItems = async () => {
+       setItems({})
+       try {
+          const response = await getTodoDate(selectedDate).unwrap();
+          setItems(response);
+       } catch (error) {
+        console.error('Todo yükleme hatası:', error);
+       } 
+  }
+
+  const handleCheck = async(id) => {
+    setRefreshing(true);
+    try {
+      await completeTodo(id);
+      await fetchItems();
+      Alert.alert(
+        "Başarılı",
+        "Görev durumu güncellendi",
+        [{ text: "Tamam" }]
+      );
+    } catch (error) {
+      Alert.alert(
+        "Hata",
+        "Görev güncellenirken bir hata oluştu",
+        [{ text: "Tamam" }]
+      );
+      console.error('Todo tamamlama hatası:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  const handleDelete = async(id) => {
+    Alert.alert(
+      "Görevi Sil",
+      "Bu görevi silmek istediğinizden emin misiniz?",
+      [
+        {
+          text: "İptal",
+          style: "cancel"
+        },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: async () => {
+            setRefreshing(true);
+            try {
+              await deleteTodo(id);
+              await fetchItems();
+              Alert.alert(
+                "Başarılı",
+                "Görev başarıyla silindi",
+                [{ text: "Tamam" }]
+              );
+            } catch (error) {
+              Alert.alert(
+                "Hata",
+                "Görev silinirken bir hata oluştu",
+                [{ text: "Tamam" }]
+              );
+              console.error('Todo silme hatası:', error);
+            } finally {
+              setRefreshing(false);
+            }
+          }
+        }
+      ]
+    );
+  }
+
+  useEffect(() => {
+    fetchItems();
+  }, [selectedDate]);
+
+   const renderEmptyDate = () => {
+    return (
+      <Surface style={styles.emptyDate} elevation={1}>
+        <IconButton
+          icon="calendar-blank"
+          size={30}
+          iconColor="#9E9E9E"
+        />
+        <Text style={styles.emptyDateText}>Bu tarih için görev bulunmuyor</Text>
+      </Surface>
+    );
+   };
+
+   
+
+  return (
+    <View style={styles.container}>
+      <Agenda
+        refreshing={refreshing}
+        onRefresh={fetchItems}
+        items={items}
+        showClosingKnob={true}
+        reservationContainerColor="#fff"
+        renderItem={renderItem}
+        renderEmptyDate={renderEmptyDate}
+        onDayPress={(day) => {
+          setSelectedDate(day.dateString);
+        }}
+        selectedDay={selectedDate}
+        theme={calendarTheme}
+        style={{
+          backgroundColor: '#FFFFFF'
+        }}
+        contentContainerStyle={{
+          backgroundColor: '#FFFFFF'
+        }}
+      />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  emptyState: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9', // Hafif gri arka plan
-    padding: 20,
-    borderRadius: 10,
-    margin: 10,
-    elevation: 2, // Gölge etkisi
+    backgroundColor: '#FFFFFF',
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#555',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  suggestionText: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-        flex:1,
-        alignItems:'center',
-        justifyContent:'center',
-        backfaceVisibility:'hidden'
-
-  }, 
-  todoCard: {
-    margin: 12,
-    borderRadius: 10,
+  item: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginRight: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 5,
-    backgroundColor: '#fff',
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
   },
-  headerRow: {
+  itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingHorizontal: 8,
+    paddingTop: 8,
   },
-  todoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1, // Başlık taşmasın diye
-    marginRight: 10,
+  priorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingRight: 12,
+  },
+  priorityText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: -4,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
   },
   completedText: {
     textDecorationLine: 'line-through',
-    color: '#888',
+    color: '#9E9E9E',
   },
-  todoDescription: {
+  itemDescription: {
     fontSize: 14,
-    color: '#555',
-    marginBottom: 10,
+    color: '#666666',
     lineHeight: 20,
+    marginBottom: 12,
   },
-  footerRow: {
+  metaContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 16,
+    paddingRight: 12,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#757575',
+    marginLeft: -4,
+  },
+  actionButtons: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  todoDate: {
-    fontSize: 12,
-    color: '#999',
+  iconButton: {
+    margin: 0,
   },
-  completedLabel: {
-    fontSize: 12,
-    color: '#4caf50',
-    fontWeight: 'bold',
+  emptyDate: {
+    height: 120,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginRight: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  emptyDateText: {
+    color: '#9E9E9E',
+    fontSize: 14,
+    marginTop: 8,
   },
 });
 
+const calendarTheme = {
+  backgroundColor: '#FFFFFF',
+  calendarBackground: '#FFFFFF',
+  agendaDayTextColor: '#1976D2',
+  agendaDayNumColor: '#1976D2',
+  agendaTodayColor: '#1976D2',
+  agendaKnobColor: '#1976D2',
+  selectedDayBackgroundColor: '#1976D2',
+  dotColor: '#1976D2',
+  todayTextColor: '#1976D2',
+  textSectionTitleColor: '#1A1A1A',
+  dayTextColor: '#1A1A1A',
+  textDisabledColor: '#BDBDBD',
+  monthTextColor: '#1A1A1A',
+  reservationsBackgroundColor: '#FFFFFF',
+  agendaBackgroundColor: '#FFFFFF',
+  reservationContainerColor: '#FFFFFF'
+};
+
+export default TodoCalendar;
