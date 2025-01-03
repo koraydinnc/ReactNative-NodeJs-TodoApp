@@ -5,8 +5,8 @@ import { useCompletedTodoMutation, useGetDateTodosMutation, useDeleteTodoMutatio
 import { IconButton, Surface } from 'react-native-paper';
 import { format } from 'date-fns';
 import { LocaleConfig } from 'react-native-calendars';
-
-// Türkçe locale ayarlarını ekleyelim
+import ConfettiCannon from 'react-native-confetti-cannon';
+import notification from './notification';
 LocaleConfig.locales['tr'] = {
   monthNames: [
     'Ocak',
@@ -80,6 +80,7 @@ const TodoCalendar = () => {
    const [items, setItems] = useState({});
    const [refreshing, setRefreshing] = useState(false); 
    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+   const [showConfetti, setShowConfetti] = useState(false);
    
    const [getTodoDate] = useGetDateTodosMutation();
 const [completeTodo] = useCompletedTodoMutation();
@@ -88,51 +89,53 @@ const [deleteTodo] = useDeleteTodoMutation();
     const priorityDetails = priorityConfig[item.priority];
     
     return (
-      <Surface style={styles.item} elevation={2}>
-        <View style={styles.itemHeader}>
-          <View style={[styles.priorityBadge, { backgroundColor: priorityDetails.color }]}>
-            <IconButton icon={priorityDetails.icon} size={16} iconColor="#FFF" />
-            <Text style={styles.priorityText}>{priorityDetails.label}</Text>
-          </View>
-          <View style={styles.actionButtons}>
-            <IconButton
-              icon={item.completed ? "check-circle" : "circle-outline"}
-              iconColor={item.completed ? '#4CAF50' : '#757575'}
-              size={24}
-              onPress={() => handleCheck(item.id)}
-              style={styles.iconButton}
-            />
-            <IconButton
-              icon="delete-outline"
-              iconColor="#FF5252"
-              size={24}
-              onPress={() => handleDelete(item.id)}
-              style={styles.iconButton}
-            />
-          </View>
-        </View>
-        
-        <View style={styles.contentContainer}>
-          <Text style={[
-            styles.itemTitle,
-            item.completed && styles.completedText
-          ]}>{item.name}</Text>
-          
-          {item.description && (
-            <Text style={[
-              styles.itemDescription,
-              item.completed && styles.completedText
-            ]}>{item.description}</Text>
-          )}
-          
-          <View style={styles.metaContainer}>
-            <View style={styles.categoryBadge}>
+      <Surface style={styles.itemContainer} elevation={2}>
+        <View style={styles.item}>
+          <View style={styles.itemHeader}>
+            <View style={[styles.priorityBadge, { backgroundColor: priorityDetails.color }]}>
+              <IconButton icon={priorityDetails.icon} size={16} iconColor="#FFF" />
+              <Text style={styles.priorityText}>{priorityDetails.label}</Text>
+            </View>
+            <View style={styles.actionButtons}>
               <IconButton
-                icon={getCategoryIcon(item.category)}
-                size={16}
-                iconColor="#757575"
+                icon={item.completed ? "check-circle" : "circle-outline"}
+                iconColor={item.completed ? '#4CAF50' : '#757575'}
+                size={24}
+                onPress={() => handleCheck(item.id)}
+                style={styles.iconButton}
               />
-              <Text style={styles.categoryText}>{item.category}</Text>
+              <IconButton
+                icon="delete-outline"
+                iconColor="#FF5252"
+                size={24}
+                onPress={() => handleDelete(item.id)}
+                style={styles.iconButton}
+              />
+            </View>
+          </View>
+          
+          <View style={styles.contentContainer}>
+            <Text style={[
+              styles.itemTitle,
+              item.completed && styles.completedText
+            ]}>{item.name}</Text>
+            
+            {item.description && (
+              <Text style={[
+                styles.itemDescription,
+                item.completed && styles.completedText
+              ]}>{item.description}</Text>
+            )}
+            
+            <View style={styles.metaContainer}>
+              <View style={styles.categoryBadge}>
+                <IconButton
+                  icon={getCategoryIcon(item.category)}
+                  size={16}
+                  iconColor="#757575"
+                />
+                <Text style={styles.categoryText}>{item.category}</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -153,8 +156,19 @@ const [deleteTodo] = useDeleteTodoMutation();
   const handleCheck = async(id) => {
     setRefreshing(true);
     try {
-      await completeTodo(id);
+      const response = await completeTodo(id);
       await fetchItems();
+      
+      notification.localNotification(
+        "Görev Tamamlandı! 🎉",
+        "Harika iş çıkardın! Bir görevi daha tamamladın."
+      );
+
+      if (response.data.todo.completed) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2000);
+      }
+      
       Alert.alert(
         "Başarılı",
         "Görev durumu güncellendi",
@@ -227,7 +241,17 @@ const [deleteTodo] = useDeleteTodoMutation();
     );
    };
 
-   
+  // Planlanmış görev için bildirim ayarlama örneği
+  const scheduleTaskReminder = (task) => {
+    const reminderTime = new Date(task.dueDate);
+    reminderTime.setHours(reminderTime.getHours() - 1); // 1 saat önce hatırlat
+
+    NotificationService.scheduleNotification(
+      "Görev Hatırlatması ⏰",
+      `'${task.name}' görevi için 1 saat kaldı!`,
+      reminderTime
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -251,6 +275,16 @@ const [deleteTodo] = useDeleteTodoMutation();
           backgroundColor: '#FFFFFF'
         }}
       />
+      {showConfetti && (
+        <ConfettiCannon
+          count={50}
+          origin={{x: -10, y: 0}}
+          autoStart={true}
+          fadeOut={true}
+          duration={2000}
+          colors={['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']}
+        />
+      )}
     </View>
   );
 }
@@ -260,23 +294,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  item: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  itemContainer: {
     marginRight: 16,
     marginTop: 16,
     marginBottom: 8,
+    borderRadius: 16,
+    elevation: 5,
+  },
+  item: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#F0F0F0',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
   itemHeader: {
     flexDirection: 'row',
